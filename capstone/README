@@ -1,0 +1,173 @@
+######
+UNIT 5 CAPSTONE SUBMISSION DOCUMENTATION
+
+
+My data is quite clean. It simply contains a bunch of images.
+So on the plus side, there really isn't much cleaning that needs to be done.
+Perhaps the most useful thing I can do to 'clean' my data is to convert each image to a matrix of colors, which I have done.
+In this format, my images are numerical data which I can pass through models.
+
+Also, by definition, since I am simply converting my images to matrices of colors, I don't have any missing values.  This is a big plus because now I don't have to do any missing value imputations.
+Another nice feature of this data is that I don't have to do any type checking or dealing with categorical variables. Everything I have can easily be converted to numerical just my casting the image as a matrix of colors.
+
+##############
+
+NOTEBOOK:
+
+GetAllColors notebook is an exploratory analysis of my data which finds what all of the distinct colors in my images are.
+
+Colors are represented by standard RGB values.
+
+####################
+
+NOTEBOOK:
+
+SimpleModels notebook is another exploratory notebook.  Here I try to see if I can notice any useful patterns in my data that might inform a model building process.
+I have successfully run a KMeans clustering to try and identify any obvious cluster colors that may be used to simplify the images.
+
+The elbow curve suggests I shouldn't need more than about 10-20 distinct colors to capture the patterns that KMeans will give.
+
+################
+
+NOTEBOOK:
+
+DataExamination notebook is probably my most exhaustive exploratory effort into this data.
+Here contains my initial efforts into clustering the colors on the images with KMeans and some of the output on how it clusters some sample images.
+In here I also wrote a plotting functio to use matplotlib directly to plot the images.
+
+I verified my suspicion that I discuss in the Unit 8 Capstone Submission that the parasitized images contain more unique colors than the uninfected images.
+This led me to believe I could build some models based on this idea to try and classify parasitized vs uninfected.
+
+I also show that if I replace the colors in an image with their clustered centers, how many colors are needed to well-represent the image. (on the order of 10s of colors)
+
+
+#################
+
+SCRIPT:
+
+colorFracs_v4.pyx is a script which became an integral tool in my analysis of the images.
+This script calculate the fraction of each color present in an image.
+This is a Cython script, and thus has an associated C code and compiled executable which can be imported into a python script.
+
+Ignore where older versions of this script have been used. The newest version has only added functionality.
+
+#############
+
+SCRIPT:
+
+commandLine.py is a simple script I wrote to help me easily run some standard command line commands from a python interface.
+
+
+###############
+
+UNIT 8 CAPSTONE SUBMISSION DOCUMENTATION
+
+
+
+I basically worked with two different modeling approaches on my data.
+
+The first approach was motivated by noticing that in my images, the parasitized cells appeared to have an extra colorful patch somewhere in the middle, whereas the uninfected cells did not.
+So my thought was that there should be more distinct colors in the parasitized images, and this could be a pattern that a model would also be able to pick up on.
+
+The second approach was to try and cluster the colors in the images to pick up on exactly which colors corresponded to the parasite. In this approach, I would be looking for images which contained these special colors, and a model should be able to pick up on this also.
+
+
+
+##############
+
+NOTEBOOK
+
+KerasModels_nColors
+
+This notebook is an initial attempt to utilize neural networks with a custom designed architecture to discriminate the images by using the first modeling approach.  These models were not very successful.
+
+############
+
+NOTEBOOK
+
+KerasModels_nColors_2
+
+This notebook is a second attempt to utilize neural networks with a custom designed architecture using the first approach.
+Here I had a bit more success.
+I was able to achieve accuracy on the validation set of about 70-75%.
+This is not bad considering the simplicity of the model used.
+
+#########
+
+NOTEBOOK
+
+TestNumberColorsModel
+
+This is the most detailed notebook containing my work on the first modeling approach.
+
+First in this notebook is a more exhaustive architecture search for number of colors.
+I was unable to exceed the accuracy as previously described.
+
+I show a brief exploration into the limitations of the accuracy of this model.
+In principle, the accuracy is limited by the amount that the distribution of number of colors in the parasitized and uninfected images overlap with each other. You just can't build a better model than the distributions allow.
+
+I additionally show how LogisticRegression may be an equally suitable approach for this problem with this modeling approach, and also show an exhaustive hyperparameter search for the best hyperparameter. This model actually got slightly higher accuracy (closer to 80%).
+Using cross-validation didn't really make any change in the accuracy of the model, suggesting that the model has not been overfit.
+I also examine the confusion matrix to see what types of images the model is confusing. And actually it makes sense why the model would get it wrong by looking at some of the images. They don't seem to follow my initial guess of containing this color spec properly.
+
+
+Following this, I show an examination into using tree-based models.
+By default, a DecisionTreeClassifier will build a massive tree, which is prone to overfitting, and doesn't actually improve accuracy that much on this problem.
+I show that very shallow trees can get just about maximal accuracy with this appraoch.
+
+I also show that using a RandomForestClassifier doesn't really improve the accuracy that much either. All of this, in my opinion, comes down to my previous discussion. There is some overlap between the distributions of number of colors, and it doesn't really matter what model is used, they are all limited in their accuracy and just can't get any better.
+
+What did surprise me a little bit was a boosted tree was able to get accuracy of greter than 80% on the validation set.
+This is really not so bad!
+
+To really dig deep, my thought was to see if perhaps utilizing autoML would help me to find an even better model, or if I can say that I've pretty much built the best possible model with this approach. I used both autosklearn and h20ai and found the accuracy was limited to slightly above 80% even with these approaches.  They did tend to favor tree models.
+
+###############
+
+NOTEBOOK
+
+TestFracClusteredColorsModel
+
+The previous modeling approch was very simple. There was just one feature to model with - the number of distinct colors in each image.
+
+This notebook contains the majority of my effort on the second modeling approach.
+In this approach, there will be multiple features: the fraction of each clustered color in each image.
+
+I show some image reconstructions based on the clusterings I attempted. Even though I had enough colors to minimze the reconstruction error in the images, I seemed to have a lack of success in actually reconstructing the images properly.
+
+I also show that for a given image, I am able to successfully reconstruct the image with a few number of clustered colors.
+
+I even tried using the reconstructed images based on 7 colors and then clustered again on all the images, but I still couldn't quite get the images to reconstruct properly.
+
+Other clustering methods were too computationally costly to effectively perform.
+
+
+#############
+
+NOTEBOOK:
+
+ReducedColors_Imgs_v2 notebook contains additional effort on the second modeling approach.
+Here I show a slightly improved image clustering and reconstruction, but still not ideal.
+
+Then I decided to try a slightly modifed version of this modeling approach.
+Instead of succesfully clustering the images' colors to be all the same set of colors, cluster each individual image to 7 colors, which seems sufficient for a good reconstruction on a given image.  Then, sort the fraction of the reconstructed colors of each image, and define the sorted color fractions as the features for this clustered color modeling approach.
+
+I show using this approach how the LogisticRegression model performs. It actually performs a little bit better than the previous modeling approach, which I was a little bit surprised about, but it's still very promising!
+
+I then show results on this data using DecisionTreeClassifier and RandomForest.
+Something interesting that comes out of this approach is the feature importances.
+It shows that the colors which appear the most and the least are the most important.  This makes sense because it seems that in the images, the parasite is typically the least appearing color.  So the presence of this color in the cell which is mostly the highest fraction appearing color makes sense to be important for determining whether the cell is parasitized.
+
+I also used boosted trees here, and this model performed even better! I approached 95% validation accuracy!
+
+I also show a brief exploration into how correlated features may be masked in tree models.
+
+##############
+
+PRESENTATION:
+
+HoranPresentation:
+
+See slides 37 on for a summary of all these results and more!
+See the first 36 slides for a bit on my PhD research and my introduction into machine learning!
+I also designed a clustering algorithm that I share there!
